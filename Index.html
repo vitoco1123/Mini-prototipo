@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SICE UNEFA - Sistema Centralizado</title>
+    <style>
+        /* === ESTILOS BASE === */
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #e9ecef; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .contenedor-app { width: 380px; height: 650px; background: #1e3d59; color: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); padding: 20px; box-sizing: border-box; position: relative; overflow-y: auto; overflow-x: hidden;}
+        
+        .pantalla { display: none; width: 100%; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; }
+        .pantalla-activa { display: flex; }
+        
+        h2 { color: #ff6e40; margin-top: 15px; margin-bottom: 5px; font-size: 20px; text-transform: uppercase; }
+        .subtitulo { font-size: 11px; color: #ff6e40; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; }
+        
+        .logo-placeholder { width: 60px; height: 60px; border-radius: 50%; margin: 10px auto; border: 2px dashed #888; display: flex; justify-content: center; align-items: center; }
+        .logo-placeholder::after { content: "LOGO"; font-size: 12px; color: #888; font-weight: bold; }
+
+        /* === FORMULARIOS UX/UI === */
+        .grupo-input { width: 90%; margin: 8px 0; display: flex; justify-content: center; align-items: center; background: white; border-radius: 6px; overflow: hidden; }
+        
+        /* Menú V-/E- */
+        .select-nacionalidad { background: #f0f0f0; border: none; padding: 12px 5px; font-weight: bold; color: #1e3d59; outline: none; border-right: 1px solid #ccc; }
+        
+        input[type="text"], input[type="password"], input[type="number"] { flex: 1; padding: 12px; border: none; font-size: 14px; background-color: transparent; color: #333; outline: none; }
+        
+        /* Ocultar flechas del input number */
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        /* El "Ojito" de la contraseña */
+        .btn-ojito { background: none; border: none; padding: 0 10px; cursor: pointer; color: #888; font-size: 16px; outline: none; }
+
+        .select-carrera { width: 90%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; font-size: 14px; color: #333; }
+
+        button { background-color: #ff6e40; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 90%; transition: background 0.2s; box-sizing: border-box;}
+        button:hover { background-color: #e65c00; }
+        .btn-secundario { background-color: transparent; border: 1px solid #ff6e40; color: #ff6e40; margin-top: 10px;}
+        .enlace-texto { font-size: 12px; color: #17b978; text-decoration: underline; cursor: pointer; margin-top: 15px; }
+
+        /* === MÓDULO DE MATERIAS === */
+        .info-uc { font-size: 13px; margin-bottom: 15px; background: #17b978; padding: 5px 15px; border-radius: 20px; font-weight: bold; display: inline-block; }
+        .contenedor-materias { width: 100%; max-height: 300px; overflow-y: auto; text-align: left; }
+        .materia-card { background: #224466; width: 95%; padding: 10px; margin: 6px auto; border-radius: 6px; font-size: 12px; display: flex; align-items: center; border-left: 4px solid #17b978; }
+        .materia-card input { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
+        
+        /* === ALERTAS Y RESULTADOS === */
+        .cuadro-alerta { background: #ff414d; color: white; padding: 10px; border-radius: 6px; font-size: 12px; margin: 10px auto; width: 90%; display: none; }
+        .recuadro-codigo { border: 1px dashed #ff6e40; padding: 12px; font-family: monospace; font-size: 11px; background: #172a3a; width: 90%; text-align: left; margin: 15px auto; border-radius: 4px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="contenedor-app">
+
+    <div id="vista-login" class="pantalla pantalla-activa">
+        <div class="logo-placeholder"></div>
+        <h2>Sistema SICE</h2>
+        <div class="subtitulo">INGRESO AL SISTEMA</div>
+        
+        <div class="cuadro-alerta" id="alerta-login"></div>
+
+        <div class="grupo-input">
+            <select class="select-nacionalidad" id="log-nac"><option value="V-">V-</option><option value="E-">E-</option></select>
+            <input type="number" id="log-cedula" placeholder="Cédula de Identidad">
+        </div>
+        
+        <div class="grupo-input">
+            <input type="password" id="log-clave" placeholder="Contraseña">
+            <button class="btn-ojito" type="button" onclick="toggleOjito('log-clave')">👁️</button>
+        </div>
+        
+        <button onclick="ejecutarLogin()">INICIAR SESIÓN</button>
+        <div class="enlace-texto" onclick="navegarA('vista-login', 'vista-registro')">¿No tienes cuenta? Regístrate aquí</div>
+    </div>
+
+    <div id="vista-registro" class="pantalla">
+        <h2>Registro de Estudiante</h2>
+        <div class="subtitulo">CREACIÓN DE PERFIL ACADÉMICO</div>
+        
+        <div class="cuadro-alerta" id="alerta-registro"></div>
+
+        <div class="grupo-input" style="background:transparent;">
+            <input type="text" id="reg-nombre" placeholder="Nombre Completo" style="background:white; border-radius:6px; width:100%;">
+        </div>
+        
+        <div class="grupo-input">
+            <select class="select-nacionalidad" id="reg-nac"><option value="V-">V-</option><option value="E-">E-</option></select>
+            <input type="number" id="reg-cedula" placeholder="Cédula de Identidad">
+        </div>
+        
+        <select class="select-carrera" id="reg-carrera">
+            <option value="">Seleccione su Carrera...</option>
+            <option value="ing_sistemas">Ingeniería de Sistemas</option>
+            <option value="enfermeria">Enfermería</option>
+            <option value="administracion">Administración de Desastres</option>
+        </select>
+
+        <div class="grupo-input">
+            <input type="password" id="reg-clave" placeholder="Crear Contraseña">
+            <button class="btn-ojito" type="button" onclick="toggleOjito('reg-clave')">👁️</button>
+        </div>
+
+        <button onclick="ejecutarRegistro()">REGISTRARSE</button>
+        <button class="btn-secundario" onclick="navegarA('vista-registro', 'vista-login')">VOLVER AL LOGIN</button>
+    </div>
+
+    <div id="vista-materias" class="pantalla">
+        <h2 style="font-size: 18px;">Oferta Académica</h2>
+        <div class="subtitulo" id="lbl-carrera-actual">CARRERA</div>
+        
+        <div class="info-uc">Límite: 20 UC | Seleccionadas: <span id="contador-uc">0</span></div>
+        <div class="cuadro-alerta" id="alerta-materias"></div>
+
+        <div class="contenedor-materias" id="lista-materias-dinamica">
+            </div>
+        
+        <button onclick="procesarInscripcionFinal()">CONFIRMAR INSCRIPCIÓN</button>
+        <div class="enlace-texto" style="color:#ff414d;" onclick="cerrarSesion()">Cancelar y Salir</div>
+    </div>
+
+    <div id="vista-exito" class="pantalla">
+        <h2 style="color: #17b978; font-size: 22px;">¡Inscripción Exitosa!</h2>
+        
+        <div class="recuadro-codigo">
+            <strong>ESTUDIANTE:</strong> <span id="doc-nombre"></span><br>
+            <strong>CÉDULA:</strong> <span id="doc-cedula"></span><br>
+            <strong>CARRERA:</strong> <span id="doc-carrera"></span><br>
+            <strong>UC INSCRITAS:</strong> <span id="doc-uc"></span><br>
+            <hr style="border: 0.5px solid #224466;">
+            <strong>ESTADO:</strong> PROCESADO EN LÍNEA
+        </div>
+
+        <button onclick="alert('Iniciando descarga de Comprobante_SICE.pdf')">DESCARGAR PLANILLA (PDF)</button>
+        <button class="btn-secundario" onclick="cerrarSesion()">FINALIZAR SESIÓN</button>
+    </div>
+
+</div>
+
+<script>
+    /* ==========================================================================
+       1. LA BASE DE DATOS (Simulada en formato JSON / Objetos JS)
+       ========================================================================== */
+    
+    // Tabla de Usuarios Registrados (Pre-cargamos a Eduardo y Francisca de ejemplo)
+    let bd_usuarios = [
+        { nombre: "Eduardo Mendoza", cedula: "V-28000111", clave: "12345", carrera_id: "ing_sistemas" },
+        { nombre: "Francisca Polanco", cedula: "V-30600222", clave: "unefa2026", carrera_id: "administracion" }
+    ];
+
+    // Tabla de Carreras y su Malla Curricular
+    const bd_carreras = {
+        "ing_sistemas": {
+            nombre: "Ingeniería de Sistemas",
+            materias: [
+                { id: "s1", nombre: "Sistemas de Información II", uc: 6 },
+                { id: "s2", nombre: "Cálculo IV", uc: 5 },
+                { id: "s3", nombre: "Base de Datos", uc: 4 },
+                { id: "s4", nombre: "Defensa Integral V", uc: 2 },
+                { id: "s5", nombre: "Arquitectura del Computador", uc: 4 }
+            ]
+        },
+        "enfermeria": {
+            nombre: "Enfermería",
+            materias: [
+                { id: "e1", nombre: "Anatomía Humana II", uc: 5 },
+                { id: "e2", nombre: "Farmacología", uc: 4 },
+                { id: "e3", nombre: "Salud Pública", uc: 3 },
+                { id: "e4", nombre: "Prácticas Clínicas I", uc: 6 }
+            ]
+        },
+        "administracion": {
+            nombre: "Administración de Desastres",
+            materias: [
+                { id: "a1", nombre: "Gestión de Riesgos", uc: 4 },
+                { id: "a2", nombre: "Primeros Auxilios Avanzados", uc: 3 },
+                { id: "a3", nombre: "Logística de Emergencia", uc: 4 },
+                { id: "a4", nombre: "Geografía Física", uc: 3 }
+            ]
+        }
+    };
+
+    // Variables de Sesión Activa
+    let usuarioActivo = null;
+    const LIMITE_UC = 20;
+
+    /* ==========================================================================
+       2. LÓGICA DE INTERFAZ (Navegación y Ojito)
+       ========================================================================== */
+    function navegarA(idOcultar, idMostrar) {
+        document.getElementById(idOcultar).classList.remove('pantalla-activa');
+        document.getElementById(idMostrar).classList.add('pantalla-activa');
+        // Ocultar alertas al cambiar de pantalla
+        document.querySelectorAll('.cuadro-alerta').forEach(alerta => alerta.style.display = 'none');
+    }
+
+    function toggleOjito(inputId) {
+        let input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+        } else {
+            input.type = "password";
+        }
+    }
+
+    function mostrarAlerta(elementoId, mensaje) {
+        let alerta = document.getElementById(elementoId);
+        alerta.innerText = mensaje;
+        alerta.style.display = "block";
+    }
+
+    /* ==========================================================================
+       3. LÓGICA DE REGISTRO E INICIO DE SESIÓN
+       ========================================================================== */
+    function ejecutarRegistro() {
+        let nombre = document.getElementById('reg-nombre').value.trim();
+        let nac = document.getElementById('reg-nac').value;
+        let cedula = document.getElementById('reg-cedula').value.trim();
+        let carrera = document.getElementById('reg-carrera').value;
+        let clave = document.getElementById('reg-clave').value.trim();
+
+        if(!nombre || !cedula || !carrera || !clave) {
+            mostrarAlerta('alerta-registro', "Error: Todos los campos son obligatorios.");
+            return;
+        }
+
+        let cedulaCompleta = nac + cedula;
+
+        // Verificar si ya existe en la BD
+        let existe = bd_usuarios.find(u => u.cedula === cedulaCompleta);
+        if(existe) {
+            mostrarAlerta('alerta-registro', "Error: Esta cédula ya está registrada.");
+            return;
+        }
+
+        // Insertar en la Base de Datos simulada
+        bd_usuarios.push({
+            nombre: nombre,
+            cedula: cedulaCompleta,
+            clave: clave,
+            carrera_id: carrera
+        });
+
+        alert("¡Registro Exitoso! Ahora puede iniciar sesión.");
+        
+        // Limpiar formulario y volver al login
+        document.getElementById('reg-nombre').value = "";
+        document.getElementById('reg-cedula').value = "";
+        document.getElementById('reg-clave').value = "";
+        document.getElementById('reg-carrera').value = "";
+        navegarA('vista-registro', 'vista-login');
+    }
+
+    function ejecutarLogin() {
+        let nac = document.getElementById('log-nac').value;
+        let ced = document.getElementById('log-cedula').value.trim();
+        let clave = document.getElementById('log-clave').value.trim();
+
+        if(!ced || !clave) {
+            mostrarAlerta('alerta-login', "Error: Ingrese credenciales.");
+            return;
+        }
+
+        let cedulaCompleta = nac + ced;
+
+        // Buscar en la Base de Datos
+        let usuarioEncontrado = bd_usuarios.find(u => u.cedula === cedulaCompleta && u.clave === clave);
+
+        if(usuarioEncontrado) {
+            // Iniciar Sesión
+            usuarioActivo = usuarioEncontrado;
+            cargarOfertaAcademica();
+            navegarA('vista-login', 'vista-materias');
+        } else {
+            mostrarAlerta('alerta-login', "Error: Cédula o contraseña incorrectos.");
+        }
+    }
+
+    /* ==========================================================================
+       4. LÓGICA DEL MÓDULO DE INSCRIPCIÓN (Dinámico según carrera)
+       ========================================================================== */
+    function cargarOfertaAcademica() {
+        let datosCarrera = bd_carreras[usuarioActivo.carrera_id];
+        
+        // Actualizar UI
+        document.getElementById('lbl-carrera-actual').innerText = datosCarrera.nombre.toUpperCase();
+        document.getElementById('contador-uc').innerText = "0";
+        
+        let contenedorLista = document.getElementById('lista-materias-dinamica');
+        contenedorLista.innerHTML = ""; // Limpiar lista anterior
+
+        // Generar las tarjetas de materias leyendo la base de datos
+        datosCarrera.materias.forEach(materia => {
+            let divCard = document.createElement('div');
+            divCard.className = 'materia-card';
+            
+            // Creamos el checkbox
+            let chk = document.createElement('input');
+            chk.type = 'checkbox';
+            chk.className = 'chk-materia';
+            chk.value = materia.uc;
+            chk.id = 'mat-' + materia.id;
+            chk.onchange = calcularCreditosActuales;
+
+            // Creamos el Label
+            let lbl = document.createElement('label');
+            lbl.htmlFor = chk.id;
+            lbl.innerText = materia.nombre + " (" + materia.uc + " UC)";
+
+            divCard.appendChild(chk);
+            divCard.appendChild(lbl);
+            contenedorLista.appendChild(divCard);
+        });
+    }
+
+    function calcularCreditosActuales() {
+        let checkboxes = document.querySelectorAll('.chk-materia:checked');
+        let totalUc = 0;
+        
+        checkboxes.forEach(chk => {
+            totalUc += parseInt(chk.value);
+        });
+
+        document.getElementById('contador-uc').innerText = totalUc;
+        
+        // Validación de límite en tiempo real
+        if(totalUc > LIMITE_UC) {
+            mostrarAlerta('alerta-materias', "⚠️ LÍMITE EXCEDIDO: Desmarque materias para no superar las " + LIMITE_UC + " UC.");
+        } else {
+            document.getElementById('alerta-materias').style.display = "none";
+        }
+        
+        return totalUc;
+    }
+
+    function procesarInscripcionFinal() {
+        let uc = calcularCreditosActuales();
+        
+        if(uc === 0) {
+            mostrarAlerta('alerta-materias', "Seleccione al menos una asignatura para inscribir.");
+            return;
+        }
+        if(uc > LIMITE_UC) {
+            mostrarAlerta('alerta-materias', "Corrija el exceso de UC antes de confirmar.");
+            return;
+        }
+
+        // Cargar datos en el comprobante final
+        document.getElementById('doc-nombre').innerText = usuarioActivo.nombre.toUpperCase();
+        document.getElementById('doc-cedula').innerText = usuarioActivo.cedula;
+        document.getElementById('doc-carrera').innerText = bd_carreras[usuarioActivo.carrera_id].nombre.toUpperCase();
+        document.getElementById('doc-uc').innerText = uc;
+
+        navegarA('vista-materias', 'vista-exito');
+    }
+
+    function cerrarSesion() {
+        usuarioActivo = null;
+        document.getElementById('log-cedula').value = "";
+        document.getElementById('log-clave').value = "";
+        navegarA(document.querySelector('.pantalla-activa').id, 'vista-login');
+    }
+</script>
+
+</body>
+</html>
