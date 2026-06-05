@@ -6,7 +6,6 @@
     <title>TECNOVA - Control Estudiantil</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         /* === ESTILOS BASE === */
@@ -61,7 +60,6 @@
 <div class="contenedor-app">
 
     <div id="vista-login" class="pantalla pantalla-activa">
-        <img src="logo-unefa.png" alt="Logo TECNOVA" style="width: 110px; height: auto; margin: 10px auto 5px auto; display: block;">
         <h2>TECNOVA</h2>
         <div class="subtitulo">CONTROL ESTUDIANTIL</div>
         
@@ -167,10 +165,16 @@
 </div>
 
 <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    // Credenciales exactas. NO CAMBIES NADA AQUÍ.
     const SUPABASE_URL = "https://wbmfymffshbptasomwre.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndibWZ5bWZmc2hicHRhc29td3JlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU5Nzk5NzksImV4cCI6MjAzMTU1NTk3OX0.T0Y1X091YjhCblFkczEtM0EwT0Z1YmN1bVpPdnZfSmU2a2Jkb1RfOUFz";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // 🚀 LA MAGIA: Inyectamos el fetch global para evitar el error
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+        global: { fetch: window.fetch.bind(window) }
+    });
 
     /* === BASE DE DATOS DE MATERIAS (4to Semestre) === */
     const bd_carreras = {
@@ -244,25 +248,30 @@
         let cedulaCompleta = nac + cedula;
 
         try {
-             const { data, error } = await supabase
+             // Verificamos primero si la cédula ya existe
+             const { data: existe, error: errorBusqueda } = await supabase
                 .from('usuarios')
-                .insert([
-                    { 
-                        cedula: cedulaCompleta, 
-                        nombre: nombre, 
-                        clave: clave, 
-                        carrera_id: carrera 
-                    }
-                ]);
+                .select('cedula')
+                .eq('cedula', cedulaCompleta);
+             
+             if (existe && existe.length > 0) {
+                 alert("Error: Esa cédula ya se encuentra registrada.");
+                 return;
+             }
 
-             if (error) throw error;
+             // Si no existe, lo guardamos
+             const { error: errorInsert } = await supabase
+                .from('usuarios')
+                .insert([{ cedula: cedulaCompleta, nombre: nombre, clave: clave, carrera_id: carrera }]);
 
-            alert("¡Registro exitoso! El estudiante ha sido inscrito de una vez.");
+             if (errorInsert) throw errorInsert;
+
+            alert("¡Registro exitoso! El estudiante ha sido guardado en la base de datos.");
             navegarA('vista-registro', 'vista-login');
             
-      } catch (error) {
+        } catch (error) {
             console.error("Error al registrar:", error.message);
-            alert("Error en la base de datos: " + error.message);
+            alert("Error de red o base de datos: " + error.message);
         }
     }
 
@@ -297,11 +306,11 @@
             alert("¡Bienvenido al SICE, " + usuario.nombre + "!");
             usuarioActivo = usuario;
             cargarOfertaAcademica();
-            navegarA('vista-login', 'vista-materials' === 'vista-materials' ? 'vista-materias' : 'vista-materias');
+            navegarA('vista-login', 'vista-materias');
 
         } catch (error) {
             console.error("Error en el login:", error.message);
-            alert("Error al conectar con la base de datos: " + error.message);
+            alert("Error al conectar: " + error.message);
         }
     }
 
@@ -323,20 +332,6 @@
             let lbl = document.createElement('label'); lbl.htmlFor = chk.id; lbl.innerText = materia.nombre + " (" + materia.uc + " UC)";
             divCard.appendChild(chk); divCard.appendChild(lbl); contenedorLista.appendChild(divCard);
         });
-    }
-
-    function calcularCreditosYHorario() {
-        let checkboxes = document.querySelectorAll('.chk-materia:checked');
-        let totalUc = 0;
-        checkboxes.forEach(chk => { totalUc += parseInt(chk.value); });
-        document.getElementById('contador-uc').innerText = totalUc;
-        
-        if(totalUc > LIMITE_UC) {
-            mostrarAlerta('alerta-materias', "⚠️ LÍMITE EXCEDIDO: Desmarque materias para no superar las " + LIMITE_UC + " UC.");
-        } else {
-            document.getElementById('alerta-materias').style.display = "none";
-        }
-        actualizarCuadroHorario();
     }
 
     function actualizarCuadroHorario() {
@@ -397,6 +392,7 @@
         html2pdf().set(opciones).from(elemento).save();
     }
 
+    // Configuración de los botones (Event Listeners dentro del módulo)
     document.getElementById('btn-ojo-login').addEventListener('click', function() { controladorOjito('log-clave', this); });
     document.getElementById('btn-ojo-registro').addEventListener('click', function() { controladorOjito('reg-clave', this); });
     document.getElementById('btn-login-trigger').addEventListener('click', ejecutarLogin);
