@@ -6,412 +6,463 @@
     <title>TECNOVA - Control Estudiantil</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         /* === ESTILOS BASE === */
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #e9ecef; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .contenedor-app { width: 380px; height: 650px; background: #3A86FF; color: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); padding: 20px; box-sizing: border-box; position: relative; overflow-y: auto; overflow-x: hidden;}
+        .contenedor-app { width: 380px; height: 650px; background: #3A86FF; color: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); padding: 20px; box-sizing: border-box; position: relative; overflow-y: auto; overflow-x: hidden; }
         
         .pantalla { display: none; width: 100%; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; }
         .pantalla-activa { display: flex; }
         
-        h2 { color: #FF1744; margin-top: 15px; margin-bottom: 5px; font-size: 20px; text-transform: uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
-        .subtitulo { font-size: 11px; color: #FF1744; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; }
+        h1 { margin: 10px 0 5px 0; font-size: 24px; letter-spacing: 2px;}
+        h2 { color: #FF1744; margin-top: 5px; margin-bottom: 5px; font-size: 18px; text-transform: uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        h3 { font-size: 12px; color: white; margin-bottom: 15px;}
         
-        /* === FORMULARIOS UX/UI === */
-        .grupo-input { width: 90%; margin: 8px 0; display: flex; justify-content: center; align-items: center; background: white; border-radius: 6px; overflow: hidden; }
-        .select-nacionalidad { background: #f0f0f0; border: none; padding: 12px 5px; font-weight: bold; color: #1e3d59; outline: none; border-right: 1px solid #ccc; }
-        input[type="text"], input[type="password"], input[type="number"] { flex: 1; padding: 12px; border: none; font-size: 14px; background-color: transparent; color: #333; outline: none; }
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .cuadro-alerta { background: #FF1744; color: white; padding: 10px; border-radius: 6px; font-size: 12px; margin: 10px 0; width: 100%; display: none; box-sizing: border-box; }
         
-        .btn-ojito { background: none; border: none; padding: 10px; cursor: pointer; outline: none; display: flex; align-items: center; justify-content: center;}
-        .select-carrera { width: 90%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; font-size: 14px; color: #333; }
-
-        button.btn-principal { background-color: #FF1744; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 90%; transition: background 0.2s; box-sizing: border-box; box-shadow: 0 4px 6px rgba(255, 23, 68, 0.3);}
+        input, button, select { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        
+        /* Grupo para cédula */
+        .grupo-cedula { display: flex; width: 100%; gap: 5px; }
+        .grupo-cedula select { width: 25%; font-weight: bold; background: #f0f0f0; }
+        .grupo-cedula input { width: 75%; }
+        
+        /* Botones */
+        button.btn-principal { background-color: #FF1744; color: white; font-weight: bold; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 6px rgba(255, 23, 68, 0.3); transition: 0.2s; }
         button.btn-principal:hover { background-color: #D50000; }
-        .btn-secundario { background-color: white; border: 1px solid #FF1744; color: #FF1744; margin-top: 10px; padding: 12px 20px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; width: 90%; box-sizing: border-box;}
-        .enlace-texto { font-size: 13px; color: #FF1744; text-decoration: underline; cursor: pointer; font-weight: bold; }
-
-        /* === MÓDULO DE MATERIAS === */
-        .info-uc { font-size: 13px; margin-bottom: 10px; background: #17b978; padding: 5px 15px; border-radius: 20px; font-weight: bold; display: inline-block; }
-        .contenedor-materias { width: 100%; max-height: 200px; overflow-y: auto; text-align: left; margin-bottom: 10px;}
-        .materia-card { background: #224466; width: 95%; padding: 10px; margin: 6px auto; border-radius: 6px; font-size: 12px; display: flex; align-items: center; border-left: 4px solid #17b978; }
-        .materia-card input { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
+        button.btn-secundario { background-color: white; color: #FF1744; border: 1px solid #FF1744; font-weight: bold; cursor: pointer; }
         
-        /* === HORARIO VISUAL DINÁMICO === */
-        .contenedor-horario { background: #224466; width: 95%; padding: 8px; border-radius: 6px; box-sizing: border-box; overflow-x: auto; margin-bottom: 10px;}
-        .titulo-horario { font-size: 11px; color: white; text-align: left; margin: 0 0 5px 0; border-bottom: 1px solid #17b978; padding-bottom: 3px;}
-        #tabla-horario { width: 100%; border-collapse: collapse; font-size: 10px; text-align: center; }
-        #tabla-horario th, #tabla-horario td { border: 1px solid #1e3d59; padding: 6px 2px; }
-        #tabla-horario th { background-color: #17b978; color: white; font-weight: bold;}
-        .celda-libre { background-color: #f0f0f0; color: #aaa; }
-        .celda-ocupada { background-color: #17b978; color: white; font-weight: bold; transition: 0.3s; }
-        .celda-choque { background-color: #FF1744; color: white; font-weight: bold; animation: vibrar 0.3s ease; }
+        .materia-card { background: #224466; padding: 10px; margin: 6px 0; border-radius: 6px; width: 100%; text-align: left; display: flex; align-items: center; border-left: 4px solid #17b978; box-sizing: border-box; font-size: 13px;}
+        .chk-materia { margin-right: 10px; width: auto; transform: scale(1.2); cursor: pointer; }
+        #lista-materias-dinamica { width: 100%; max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
+        
+        #cuadro-horario { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; width: 100%; margin: 10px 0; font-size: 10px; }
+        .celda { padding: 8px 2px; border-radius: 3px; text-align: center; border: 1px solid #1e3d59; }
+        .celda-header { background: #17b978; color: white; font-weight: bold; }
+        .celda-libre { background: #f0f0f0; color: #aaa; }
+        .celda-ocupada { background: #17b978; color: white; font-weight: bold; }
+        .celda-choque { background: #FF1744; color: white; font-weight: bold; animation: vibrar 0.3s ease; }
         
         @keyframes vibrar { 0% { transform: translateX(0); } 25% { transform: translateX(-2px); } 50% { transform: translateX(2px); } 75% { transform: translateX(-2px); } 100% { transform: translateX(0); } }
 
-        /* === ALERTAS Y RESULTADOS === */
-        .cuadro-alerta { background: #FF1744; color: white; padding: 10px; border-radius: 6px; font-size: 12px; margin: 5px auto; width: 90%; display: none; }
-        .recuadro-codigo { border: 2px dashed #FF1744; padding: 12px; font-family: monospace; font-size: 11px; background: white; color: #333; width: 100%; text-align: left; margin: 15px auto; border-radius: 4px; line-height: 1.6; box-sizing: border-box;}
+        #comprobante-pdf { background: white; color: #333; padding: 15px; border-radius: 8px; margin: 15px 0; width: 100%; box-sizing: border-box; text-align: left; border: 2px dashed #FF1744; }
+        #comprobante-pdf p { margin: 5px 0; font-size: 13px; }
     </style>
 </head>
 <body>
-
-<div class="contenedor-app">
-
-    <div id="vista-login" class="pantalla pantalla-activa">
-        <img src="logo-unefa.png" alt="Logo TECNOVA" style="width: 110px; height: auto; margin: 10px auto 5px auto; display: block;">
+    <div class="contenedor-app">
         
-        <h2>TECNOVA</h2>
-        <div class="subtitulo">CONTROL ESTUDIANTIL</div>
-        
-        <div class="cuadro-alerta" id="alerta-login"></div>
-
-        <div class="grupo-input">
-            <select class="select-nacionalidad" id="log-nac"><option value="V-">V-</option><option value="E-">E-</option></select>
-            <input type="number" id="log-cedula" placeholder="Cédula de Identidad">
-        </div>
-        
-        <div class="grupo-input">
-            <input type="password" id="log-clave" placeholder="Contraseña">
-            <button class="btn-ojito" type="button" id="btn-ojo-login">
-                <svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            </button>
-        </div>
-        
-        <button class="btn-principal" id="btn-login-trigger">INICIAR SESIÓN</button>
-        
-        <div style="font-size: 13px; margin-top: 18px; color: white;">
-            ¿No tienes cuenta? <span class="enlace-texto" id="lnk-ir-registro" style="margin-left: 5px;">Regístrate aquí</span>
-        </div>
-    </div>
-
-    <div id="vista-registro" class="pantalla">
-        <h2>Registro</h2>
-        <div class="subtitulo">NUEVO PERFIL ACADÉMICO</div>
-        
-        <div class="cuadro-alerta" id="alerta-registro"></div>
-
-        <div class="grupo-input" style="background:transparent;">
-            <input type="text" id="reg-nombre" placeholder="Nombre Completo" style="background:white; border-radius:6px; width:100%;">
-        </div>
-        
-        <div class="grupo-input">
-            <select class="select-nacionalidad" id="reg-nac"><option value="V-">V-</option><option value="E-">E-</option></select>
-            <input type="number" id="reg-cedula" placeholder="Cédula">
-        </div>
-        
-        <select class="select-carrera" id="reg-carrera">
-            <option value="">Seleccione su Carrera...</option>
-            <option value="ing_sistemas">Ingeniería de Sistemas</option>
-            <option value="enfermeria">Enfermería</option>
-            <option value="administracion">Administración de Desastres</option>
-        </select>
-
-        <div class="grupo-input">
-            <input type="password" id="reg-clave" placeholder="Crear Contraseña">
-            <button class="btn-ojito" type="button" id="btn-ojo-registro">
-                <svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            </button>
-        </div>
-
-        <button class="btn-principal" id="btn-registro-trigger">REGISTRARSE</button>
-        <button class="btn-secundario" id="btn-volver-login">VOLVER AL LOGIN</button>
-    </div>
-
-    <div id="vista-materias" class="pantalla">
-        <h2 style="font-size: 18px;">Oferta Académica</h2>
-        <div class="subtitulo" id="lbl-carrera-actual" style="color: white;">CARRERA</div>
-        
-        <div class="info-uc">Límite: 20 UC | Seleccionadas: <span id="contador-uc">0</span></div>
-        <div class="cuadro-alerta" id="alerta-materias"></div>
-
-        <div class="contenedor-materias" id="lista-materias-dinamica"></div>
-        
-        <div class="contenedor-horario">
-            <p class="titulo-horario">Previsualización de Horario</p>
-            <table id="tabla-horario">
-                <thead>
-                    <tr><th>Hora</th><th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td>07:00</td><td id="celda-lunes-1" class="celda-libre">-</td><td id="celda-martes-1" class="celda-libre">-</td><td id="celda-miercoles-1" class="celda-libre">-</td><td id="celda-jueves-1" class="celda-libre">-</td><td id="celda-viernes-1" class="celda-libre">-</td></tr>
-                    <tr><td>08:30</td><td id="celda-lunes-2" class="celda-libre">-</td><td id="celda-martes-2" class="celda-libre">-</td><td id="celda-miercoles-2" class="celda-libre">-</td><td id="celda-jueves-2" class="celda-libre">-</td><td id="celda-viernes-2" class="celda-libre">-</td></tr>
-                    <tr><td>10:00</td><td id="celda-lunes-3" class="celda-libre">-</td><td id="celda-martes-3" class="celda-libre">-</td><td id="celda-miercoles-3" class="celda-libre">-</td><td id="celda-jueves-3" class="celda-libre">-</td><td id="celda-viernes-3" class="celda-libre">-</td></tr>
-                </tbody>
-            </table>
-        </div>
-
-        <button class="btn-principal" id="btn-confirmar-inscripcion">CONFIRMAR INSCRIPCIÓN</button>
-        <div class="enlace-texto" style="color: white; margin-top:12px;" id="btn-cancelar-salir">Cancelar y Salir</div>
-    </div>
-
-    <div id="vista-exito" class="pantalla">
-        <div id="comprobante-pdf" style="width: 100%; padding: 15px; box-sizing: border-box; background: #3A86FF; border-radius: 8px;">
-            <h2 style="color: white; font-size: 20px;">¡Inscripción Exitosa!</h2>
-            <div class="recuadro-codigo">
-                <center><strong style="font-size:12px; color:#3A86FF;">I.U.T. TECNOVA</strong></center>
-                <hr style="border: 0.5px solid #ccc; margin: 8px 0;">
-                <strong style="color:#FF1744;">ESTUDIANTE:</strong> <span id="doc-nombre"></span><br>
-                <strong style="color:#FF1744;">CÉDULA:</strong> <span id="doc-cedula"></span><br>
-                <strong style="color:#FF1744;">CARRERA:</strong> <span id="doc-carrera"></span><br>
-                <strong style="color:#FF1744;">UC INSCRITAS:</strong> <span id="doc-uc"></span><br>
-                <hr style="border: 0.5px solid #ccc; margin: 8px 0;">
-                <strong>ESTADO:</strong> PROCESADO EN NUBE SUPABASE
+        <div id="vista-login" class="pantalla pantalla-activa">
+            <img src="logo-unefa.png" alt="Logo UNEFA" style="width: 100px; height: auto; margin: 10px auto 5px auto; display: block;">
+            <h1>TECNOVA</h1>
+            <h2>INICIO DE SESIÓN</h2>
+            
+            <div id="alerta-login" class="cuadro-alerta"></div>
+            
+            <div class="grupo-cedula">
+                <select id="log-nac">
+                    <option value="V-">V-</option>
+                    <option value="E-">E-</option>
+                </select>
+                <input type="number" id="log-cedula" placeholder="Cédula">
             </div>
+            
+            <div style="position: relative; width: 100%;">
+                <input type="password" id="log-clave" placeholder="Contraseña">
+                <button type="button" id="btn-ojo-login" style="position: absolute; right: 5px; top: 8px; width: auto; background: none; border: none; cursor: pointer; padding: 5px;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+            </div>
+            
+            <button class="btn-principal" id="btn-login-trigger">INICIAR SESIÓN</button>
+            <a id="lnk-ir-registro" style="color: white; cursor: pointer; margin-top: 15px; text-decoration: underline; font-size: 13px;">¿No tienes cuenta? Regístrate aquí</a>
         </div>
-        <button class="btn-principal" id="btn-descargar-pdf">DESCARGAR PLANILLA (PDF)</button>
-        <button class="btn-secundario" id="btn-finalizar-sesion">FINALIZAR SESIÓN</button>
+
+        <div id="vista-registro" class="pantalla">
+            <img src="logo-unefa.png" alt="Logo UNEFA" style="width: 80px; height: auto; margin: 5px auto; display: block;">
+            <h2>REGISTRO</h2>
+            <h3>NUEVO PERFIL ACADÉMICO</h3>
+            
+            <div id="alerta-registro" class="cuadro-alerta"></div>
+            
+            <input type="text" id="reg-nombre" placeholder="Nombre completo">
+            
+            <div class="grupo-cedula">
+                <select id="reg-nac">
+                    <option value="V-">V-</option>
+                    <option value="E-">E-</option>
+                </select>
+                <input type="number" id="reg-cedula" placeholder="Cédula">
+            </div>
+            
+            <select id="reg-carrera">
+                <option value="">Seleccione Carrera...</option>
+                <option value="ing_sistemas">Ingeniería de Sistemas</option>
+                <option value="enfermeria">Enfermería</option>
+                <option value="administracion">Administración de Desastres</option>
+            </select>
+            
+            <div style="position: relative; width: 100%;">
+                <input type="password" id="reg-clave" placeholder="Crear Contraseña">
+                <button type="button" id="btn-ojo-registro" style="position: absolute; right: 5px; top: 8px; width: auto; background: none; border: none; cursor: pointer; padding: 5px;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+            </div>
+            
+            <button class="btn-principal" id="btn-registro-trigger">REGISTRARME</button>
+            <button class="btn-secundario" id="btn-volver-login">VOLVER AL LOGIN</button>
+        </div>
+
+        <div id="vista-materias" class="pantalla">
+            <h2>OFERTA ACADÉMICA</h2>
+            <h3 id="lbl-carrera-actual">Carrera</h3>
+            
+            <div style="background: #17b978; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 10px;">
+                UC Seleccionadas: <span id="contador-uc">0</span> / 20
+            </div>
+            
+            <div id="alerta-materias" class="cuadro-alerta"></div>
+            
+            <div id="lista-materias-dinamica"></div>
+            
+            <div style="width: 100%; text-align: left; font-size: 11px; margin-top: 5px; border-bottom: 1px solid #17b978;">Horario:</div>
+            <div id="cuadro-horario">
+                <div class="celda celda-header">Lun</div><div class="celda celda-header">Mar</div><div class="celda celda-header">Mié</div><div class="celda celda-header">Jue</div><div class="celda celda-header">Vie</div>
+                <div class="celda celda-libre" id="celda-lunes-1">-</div><div class="celda celda-libre" id="celda-martes-1">-</div><div class="celda celda-libre" id="celda-miercoles-1">-</div><div class="celda celda-libre" id="celda-jueves-1">-</div><div class="celda celda-libre" id="celda-viernes-1">-</div>
+                <div class="celda celda-libre" id="celda-lunes-2">-</div><div class="celda celda-libre" id="celda-martes-2">-</div><div class="celda celda-libre" id="celda-miercoles-2">-</div><div class="celda celda-libre" id="celda-jueves-2">-</div><div class="celda celda-libre" id="celda-viernes-2">-</div>
+                <div class="celda celda-libre" id="celda-lunes-3">-</div><div class="celda celda-libre" id="celda-martes-3">-</div><div class="celda celda-libre" id="celda-miercoles-3">-</div><div class="celda celda-libre" id="celda-jueves-3">-</div><div class="celda celda-libre" id="celda-viernes-3">-</div>
+            </div>
+            
+            <button class="btn-principal" id="btn-confirmar-inscripcion">CONFIRMAR INSCRIPCIÓN</button>
+            <a id="btn-finalizar-sesion" style="color: white; cursor: pointer; margin-top: 15px; text-decoration: underline; font-size: 13px;">Cerrar Sesión</a>
+        </div>
+
+        <div id="vista-exito" class="pantalla">
+            <img src="logo-unefa.png" alt="Logo UNEFA" style="width: 80px; height: auto; margin: 5px auto; display: block;">
+            <h2>¡INSCRIPCIÓN EXITOSA!</h2>
+            
+            <div id="comprobante-pdf">
+                <center><strong style="color:#3A86FF; font-size: 16px;">I.U.T. TECNOVA</strong></center>
+                <hr style="border: 0.5px solid #ccc; margin: 8px 0;">
+                <p><strong style="color:#FF1744;">ESTUDIANTE:</strong> <span id="doc-nombre"></span></p>
+                <p><strong style="color:#FF1744;">CÉDULA:</strong> <span id="doc-cedula"></span></p>
+                <p><strong style="color:#FF1744;">CARRERA:</strong> <span id="doc-carrera"></span></p>
+                <p><strong style="color:#FF1744;">UC INSCRITAS:</strong> <span id="doc-uc"></span></p>
+                <hr style="border: 0.5px solid #ccc; margin: 8px 0;">
+                <p style="font-size: 11px; text-align: center; font-weight: bold;">PROCESADO EN NUBE SUPABASE</p>
+            </div>
+            
+            <button class="btn-principal" id="btn-descargar-pdf">DESCARGAR PLANILLA (PDF)</button>
+            <button class="btn-secundario" id="btn-cancelar-salir" style="margin-top: 10px;">FINALIZAR</button>
+        </div>
     </div>
 
-</div>
+    <script>
+        // 1. INICIALIZACIÓN DE SUPABASE (VERSIÓN GLOBAL SEGURA)
+        let SUPABASE_URL = "https://wbmfymffshbptasomwre.supabase.co";
+        let SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndibWZ5bWZmc2hicHRhc29td3JlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU5Nzk5NzksImV4cCI6MjAzMTU1NTk3OX0.T0Y1X091YjhCblFkczEtM0EwT0Z1YmN1bVpPdnZfSmU2a2Jkb1RfOUFz";
+        let supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-<script>
-    const SUPABASE_URL = "https://wbmfymffshbptasomwre.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndibWZ5bWZmc2hicHRhc29td3JlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU5Nzk5NzksImV4cCI6MjAzMTU1NTk3OX0.T0Y1X091YjhCblFkczEtM0EwT0Z1YmN1bVpPdnZfSmU2a2Jkb1RfOUFz";
-
-    // Conexión usando el objeto global window.supabase (Infalible)
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const bd_carreras = {
-        "ing_sistemas": {
-            nombre: "Ingeniería de Sistemas",
-            materias: [
-                { id: "s1", nombre: "Algoritmos y Estructuras", uc: 5, dia: "lunes", hora: "1" },
-                { id: "s2", nombre: "Métodos Numéricos", uc: 4, dia: "martes", hora: "2" },
-                { id: "s3", nombre: "Programación Orientada a Objetos", uc: 5, dia: "lunes", hora: "1" }, 
-                { id: "s4", nombre: "Defensa Integral IV", uc: 2, dia: "miercoles", hora: "3" },
-                { id: "s5", nombre: "Procesamiento de Datos", uc: 4, dia: "jueves", hora: "2" }
-            ]
-        },
-        "enfermeria": {
-            nombre: "Enfermería",
-            materias: [
-                { id: "e1", nombre: "Anatomía Humana II", uc: 5, dia: "lunes", hora: "1" },
-                { id: "e2", nombre: "Farmacología", uc: 4, dia: "martes", hora: "1" }
-            ]
-        },
-        "administracion": {
-            nombre: "Administración de Desastres",
-            materias: [
-                { id: "a1", nombre: "Gestión de Riesgos", uc: 4, dia: "lunes", hora: "2" },
-                { id: "a2", nombre: "Logística de Emergencias", uc: 4, dia: "miercoles", hora: "1" }
-            ]
-        }
-    };
-
-    let usuarioActivo = null;
-    const LIMITE_UC = 20;
-    let choqueGlobal = false;
-
-    function navegarA(idOcultar, idMostrar) {
-        document.getElementById(idOcultar).classList.remove('pantalla-activa');
-        document.getElementById(idMostrar).classList.add('pantalla-activa');
-        document.querySelectorAll('.cuadro-alerta').forEach(alerta => alerta.style.display = 'none');
-    }
-
-    function mostrarAlerta(elementoId, mensaje) {
-        let alerta = document.getElementById(elementoId);
-        alerta.innerText = mensaje;
-        alerta.style.display = "block";
-    }
-
-    const iconoOjoAbierto = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
-    const iconoOjoCerrado = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
-
-    function controladorOjito(inputId, btn) {
-        let input = document.getElementById(inputId);
-        if (input.type === "password") {
-            input.type = "text";
-            btn.innerHTML = iconoOjoCerrado;
-        } else {
-            input.type = "password";
-            btn.innerHTML = iconoOjoAbierto;
-        }
-    }
-
-    async function ejecutarRegistro() {
-        let nombre = document.getElementById('reg-nombre').value.trim();
-        let nac = document.getElementById('reg-nac').value;
-        let cedula = document.getElementById('reg-cedula').value.trim();
-        let carrera = document.getElementById('reg-carrera').value;
-        let clave = document.getElementById('reg-clave').value.trim();
-
-        if(!nombre || !cedula || !carrera || !clave) { mostrarAlerta('alerta-registro', "Error: Todos los campos son obligatorios."); return; }
-        if(cedula.length < 7) { mostrarAlerta('alerta-registro', "Error: La cédula debe tener al menos 7 números."); return; }
-        if(clave.length < 6) { mostrarAlerta('alerta-registro', "Error: La contraseña debe tener al menos 6 caracteres."); return; }
-
-        let cedulaCompleta = nac + cedula;
-
-        try {
-             const { data: existe, error: errorBusqueda } = await supabase
-                .from('usuarios')
-                .select('cedula')
-                .eq('cedula', cedulaCompleta);
-             
-             if (existe && existe.length > 0) {
-                 alert("Error: Esa cédula ya se encuentra registrada.");
-                 return;
-             }
-
-             const { error: errorInsert } = await supabase
-                .from('usuarios')
-                .insert([{ cedula: cedulaCompleta, nombre: nombre, clave: clave, carrera_id: carrera }]);
-
-             if (errorInsert) throw errorInsert;
-
-            alert("¡Registro exitoso! El estudiante ha sido guardado en la base de datos.");
-            navegarA('vista-registro', 'vista-login');
-            
-        } catch (error) {
-            console.error("Error al registrar:", error.message);
-            alert("Error de red o base de datos: " + error.message);
-        }
-    }
-
-    async function ejecutarLogin() {
-        let nac = document.getElementById('log-nac').value;
-        let ced = document.getElementById('log-cedula').value.trim();
-        let clave = document.getElementById('log-clave').value.trim();
-
-        if(!ced || !clave) { mostrarAlerta('alerta-login', "Error: Ingrese credenciales."); return; }
-        let cedulaCompleta = nac + ced;
-        
-        try {
-            const { data: usuarios, error } = await supabase
-                .from('usuarios')
-                .select('*')
-                .eq('cedula', cedulaCompleta);
-
-            if (error) throw error;
-
-            if (!usuarios || usuarios.length === 0) {
-                alert("El usuario no se encuentra registrado.");
-                return;
+        // 2. BASE DE DATOS LOCAL DE MATERIAS
+        let bd_carreras = {
+            "ing_sistemas": {
+                nombre: "Ingeniería de Sistemas",
+                materias: [
+                    { id: "s1", nombre: "Algoritmos y Estructuras", uc: 5, dia: "lunes", hora: "1" },
+                    { id: "s2", nombre: "Métodos Numéricos", uc: 4, dia: "martes", hora: "2" },
+                    { id: "s3", nombre: "Programación Orientada a Objetos", uc: 5, dia: "lunes", hora: "3" },
+                    { id: "s4", nombre: "Defensa Integral IV", uc: 2, dia: "miercoles", hora: "1" },
+                    { id: "s5", nombre: "Procesamiento de Datos", uc: 4, dia: "jueves", hora: "2" }
+                ]
+            },
+            "enfermeria": {
+                nombre: "Enfermería",
+                materias: [
+                    { id: "e1", nombre: "Anatomía Humana II", uc: 5, dia: "lunes", hora: "1" },
+                    { id: "e2", nombre: "Farmacología", uc: 4, dia: "martes", hora: "1" }
+                ]
+            },
+            "administracion": {
+                nombre: "Administración de Desastres",
+                materias: [
+                    { id: "a1", nombre: "Gestión de Riesgos", uc: 4, dia: "lunes", hora: "2" },
+                    { id: "a2", nombre: "Logística de Emergencias", uc: 4, dia: "miercoles", hora: "1" }
+                ]
             }
-
-            const usuario = usuarios[0];
-
-            if (usuario.clave !== clave) {
-                alert("La contraseña ingresada es incorrecta.");
-                return;
-            }
-
-            alert("¡Bienvenido al SICE, " + usuario.nombre + "!");
-            usuarioActivo = usuario;
-            cargarOfertaAcademica();
-            navegarA('vista-login', 'vista-materias');
-
-        } catch (error) {
-            console.error("Error en el login:", error.message);
-            alert("Error al conectar: " + error.message);
-        }
-    }
-
-    function cargarOfertaAcademica() {
-        let datosCarrera = bd_carreras[usuarioActivo.carrera_id];
-        document.getElementById('lbl-carrera-actual').innerText = datosCarrera.nombre.toUpperCase();
-        document.getElementById('contador-uc').innerText = "0";
-        
-        let contenedorLista = document.getElementById('lista-materias-dinamica');
-        contenedorLista.innerHTML = ""; 
-
-        datosCarrera.materias.forEach(materia => {
-            let divCard = document.createElement('div'); divCard.className = 'materia-card';
-            let chk = document.createElement('input'); chk.type = 'checkbox'; chk.className = 'chk-materia'; chk.value = materia.uc; chk.id = 'mat-' + materia.id;
-            chk.dataset.dia = materia.dia; chk.dataset.hora = materia.hora; chk.dataset.nombre = materia.nombre;
-            
-            chk.addEventListener('change', calcularCreditosYHorario);
-
-            let lbl = document.createElement('label'); lbl.htmlFor = chk.id; lbl.innerText = materia.nombre + " (" + materia.uc + " UC)";
-            divCard.appendChild(chk); divCard.appendChild(lbl); contenedorLista.appendChild(divCard);
-        });
-    }
-
-    function calcularCreditosYHorario() {
-        let checkboxes = document.querySelectorAll('.chk-materia:checked');
-        let totalUc = 0;
-        checkboxes.forEach(chk => { totalUc += parseInt(chk.value); });
-        document.getElementById('contador-uc').innerText = totalUc;
-        
-        if(totalUc > LIMITE_UC) {
-            mostrarAlerta('alerta-materias', "⚠️ LÍMITE EXCEDIDO: Desmarque materias para no superar las " + LIMITE_UC + " UC.");
-        } else {
-            document.getElementById('alerta-materias').style.display = "none";
-        }
-        actualizarCuadroHorario();
-    }
-
-    function actualizarCuadroHorario() {
-        choqueGlobal = false;
-        document.querySelectorAll('[id^="celda-"]').forEach(celda => {
-            celda.classList.remove('celda-ocupada', 'celda-choque'); celda.classList.add('celda-libre'); celda.innerText = '-';
-        });
-
-        const seleccionadas = document.querySelectorAll('.chk-materia:checked');
-        seleccionadas.forEach(chk => {
-            const dia = chk.dataset.dia; const hora = chk.dataset.hora;
-            const nombreCorto = chk.dataset.nombre.substring(0, 5) + "."; 
-            const celda = document.getElementById(`celda-${dia}-${hora}`);
-            if (celda) {
-                if (!celda.classList.contains('celda-libre')) {
-                    celda.classList.remove('celda-ocupada', 'celda-libre'); celda.classList.add('celda-choque');
-                    celda.innerText = 'CHOQUE'; choqueGlobal = true;
-                } else {
-                    celda.classList.remove('celda-libre'); celda.classList.add('celda-ocupada'); celda.innerText = nombreCorto;
-                }
-            }
-        });
-
-        if(choqueGlobal) {
-            mostrarAlerta('alerta-materias', "⚠️ ERROR: Tiene materias chocando en el mismo horario.");
-        }
-    }
-
-    function procesarInscripcionFinal() {
-        let uc = parseInt(document.getElementById('contador-uc').innerText);
-        if(uc === 0) { mostrarAlerta('alerta-materias', "Seleccione al menos una asignatura."); return; }
-        if(uc > LIMITE_UC) { mostrarAlerta('alerta-materias', "Corrija el exceso de UC antes de confirmar."); return; }
-        if(choqueGlobal) { mostrarAlerta('alerta-materias', "Debe solucionar los choques de horario."); return; }
-
-        document.getElementById('doc-nombre').innerText = usuarioActivo.nombre.toUpperCase();
-        document.getElementById('doc-cedula').innerText = usuarioActivo.cedula;
-        document.getElementById('doc-carrera').innerText = bd_carreras[usuarioActivo.carrera_id].nombre.toUpperCase();
-        document.getElementById('doc-uc').innerText = uc;
-        navegarA('vista-materias', 'vista-exito');
-    }
-
-    function cerrarSesion() {
-        usuarioActivo = null;
-        document.getElementById('log-cedula').value = ""; document.getElementById('log-clave').value = "";
-        navegarA('vista-materias', 'vista-login');
-        navegarA('vista-exito', 'vista-login');
-    }
-
-    function descargarPDF() {
-        const elemento = document.getElementById('comprobante-pdf');
-        const opciones = {
-            margin: 0.5,
-            filename: 'Comprobante_TECNOVA_' + usuarioActivo.cedula + '.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, backgroundColor: '#3A86FF' },
-            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
         };
-        html2pdf().set(opciones).from(elemento).save();
-    }
 
-    document.getElementById('btn-ojo-login').addEventListener('click', function() { controladorOjito('log-clave', this); });
-    document.getElementById('btn-ojo-registro').addEventListener('click', function() { controladorOjito('reg-clave', this); });
-    document.getElementById('btn-login-trigger').addEventListener('click', ejecutarLogin);
-    document.getElementById('btn-registro-trigger').addEventListener('click', ejecutarRegistro);
-    document.getElementById('btn-confirmar-inscripcion').addEventListener('click', procesarInscripcionFinal);
-    document.getElementById('btn-descargar-pdf').addEventListener('click', descargarPDF);
-    document.getElementById('btn-finalizar-sesion').addEventListener('click', cerrarSesion);
-    document.getElementById('btn-cancelar-salir').addEventListener('click', cerrarSesion);
-    document.getElementById('lnk-ir-registro').addEventListener('click', function() { navegarA('vista-login', 'vista-registro'); });
-    document.getElementById('btn-volver-login').addEventListener('click', function() { navegarA('vista-registro', 'vista-login'); });
-</script>
+        // 3. VARIABLES GLOBALES (Usamos 'let' para evitar errores de constante)
+        let usuarioActivo = null;
+        let LIMITE_UC = 20;
+        let choqueGlobal = false;
 
+        // Iconos SVG para contraseñas
+        let iconoOjoAbierto = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+        let iconoOjoCerrado = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="#888" stroke-width="2" fill="none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`;
+
+        // 4. FUNCIONES DE UTILIDAD
+        function navegarA(idOcultar, idMostrar) {
+            document.getElementById(idOcultar).classList.remove('pantalla-activa');
+            document.getElementById(idMostrar).classList.add('pantalla-activa');
+            document.querySelectorAll('.cuadro-alerta').forEach(alerta => alerta.style.display = 'none');
+        }
+
+        function mostrarAlerta(elementoId, mensaje) {
+            let alerta = document.getElementById(elementoId);
+            alerta.innerText = mensaje;
+            alerta.style.display = "block";
+        }
+
+        function controladorOjito(inputId, btn) {
+            let input = document.getElementById(inputId);
+            if (input.type === "password") {
+                input.type = "text";
+                btn.innerHTML = iconoOjoCerrado;
+            } else {
+                input.type = "password";
+                btn.innerHTML = iconoOjoAbierto;
+            }
+        }
+
+        // 5. FUNCIONES DE SUPABASE (REGISTRO Y LOGIN)
+        async function ejecutarRegistro() {
+            let nombre = document.getElementById('reg-nombre').value.trim();
+            let nac = document.getElementById('reg-nac').value;
+            let cedula = document.getElementById('reg-cedula').value.trim();
+            let carrera = document.getElementById('reg-carrera').value;
+            let clave = document.getElementById('reg-clave').value.trim();
+
+            if (!nombre || !cedula || !carrera || !clave) {
+                mostrarAlerta('alerta-registro', "Error: Todos los campos son obligatorios.");
+                return;
+            }
+            if (cedula.length < 7) {
+                mostrarAlerta('alerta-registro', "Error: La cédula debe tener al menos 7 números.");
+                return;
+            }
+            if (clave.length < 6) {
+                mostrarAlerta('alerta-registro', "Error: La contraseña debe tener al menos 6 caracteres.");
+                return;
+            }
+
+            let cedulaCompleta = nac + cedula;
+
+            try {
+                // Verificar si existe
+                let { data: existe, error: errorBusqueda } = await supabase
+                    .from('usuarios')
+                    .select('cedula')
+                    .eq('cedula', cedulaCompleta);
+
+                if (errorBusqueda) throw errorBusqueda;
+
+                if (existe && existe.length > 0) {
+                    mostrarAlerta('alerta-registro', "Error: Esa cédula ya se encuentra registrada.");
+                    return;
+                }
+
+                // Insertar en Supabase
+                let { error: errorInsert } = await supabase
+                    .from('usuarios')
+                    .insert([{
+                        cedula: cedulaCompleta,
+                        nombre: nombre,
+                        clave: clave,
+                        carrera_id: carrera
+                    }]);
+
+                if (errorInsert) throw errorInsert;
+
+                alert("¡Registro exitoso! El estudiante ha sido guardado en la Nube.");
+                navegarA('vista-registro', 'vista-login');
+
+            } catch (error) {
+                console.error("Error al registrar:", error.message);
+                mostrarAlerta('alerta-registro', "Error de base de datos: " + error.message);
+            }
+        }
+
+        async function ejecutarLogin() {
+            let nac = document.getElementById('log-nac').value;
+            let ced = document.getElementById('log-cedula').value.trim();
+            let clave = document.getElementById('log-clave').value.trim();
+
+            if (!ced || !clave) {
+                mostrarAlerta('alerta-login', "Error: Ingrese credenciales.");
+                return;
+            }
+            let cedulaCompleta = nac + ced;
+
+            try {
+                // Buscar en Supabase
+                let { data: usuarios, error } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('cedula', cedulaCompleta);
+
+                if (error) throw error;
+
+                if (!usuarios || usuarios.length === 0) {
+                    mostrarAlerta('alerta-login', "El usuario no se encuentra registrado.");
+                    return;
+                }
+
+                let usuario = usuarios[0];
+
+                if (usuario.clave !== clave) {
+                    mostrarAlerta('alerta-login', "La contraseña ingresada es incorrecta.");
+                    return;
+                }
+
+                usuarioActivo = usuario;
+                cargarOfertaAcademica();
+                navegarA('vista-login', 'vista-materias');
+
+            } catch (error) {
+                console.error("Error en el login:", error.message);
+                mostrarAlerta('alerta-login', "Error de conexión: " + error.message);
+            }
+        }
+
+        // 6. FUNCIONES DE MATERIAS Y HORARIO
+        function cargarOfertaAcademica() {
+            let datosCarrera = bd_carreras[usuarioActivo.carrera_id];
+            document.getElementById('lbl-carrera-actual').innerText = datosCarrera.nombre.toUpperCase();
+            document.getElementById('contador-uc').innerText = "0";
+
+            let contenedorLista = document.getElementById('lista-materias-dinamica');
+            contenedorLista.innerHTML = "";
+
+            datosCarrera.materias.forEach(materia => {
+                let divCard = document.createElement('div');
+                divCard.className = 'materia-card';
+
+                let chk = document.createElement('input');
+                chk.type = 'checkbox';
+                chk.className = 'chk-materia';
+                chk.value = materia.uc;
+                chk.id = 'mat-' + materia.id;
+                chk.dataset.dia = materia.dia;
+                chk.dataset.hora = materia.hora;
+                chk.dataset.nombre = materia.nombre;
+                chk.addEventListener('change', calcularCreditosYHorario);
+
+                let lbl = document.createElement('label');
+                lbl.htmlFor = chk.id;
+                lbl.innerText = materia.nombre + " (" + materia.uc + " UC)";
+
+                divCard.appendChild(chk);
+                divCard.appendChild(lbl);
+                contenedorLista.appendChild(divCard);
+            });
+        }
+
+        function calcularCreditosYHorario() {
+            let checkboxes = document.querySelectorAll('.chk-materia:checked');
+            let totalUc = 0;
+            checkboxes.forEach(chk => {
+                totalUc += parseInt(chk.value);
+            });
+            document.getElementById('contador-uc').innerText = totalUc;
+
+            if (totalUc > LIMITE_UC) {
+                mostrarAlerta('alerta-materias', "⚠️ LÍMITE EXCEDIDO: Desmarque materias.");
+            } else {
+                document.getElementById('alerta-materias').style.display = "none";
+            }
+            actualizarCuadroHorario();
+        }
+
+        function actualizarCuadroHorario() {
+            choqueGlobal = false;
+            document.querySelectorAll('[id^="celda-"]').forEach(celda => {
+                // No tocar las cabeceras
+                if(!celda.classList.contains('celda-header')) {
+                    celda.classList.remove('celda-ocupada', 'celda-choque');
+                    celda.classList.add('celda-libre');
+                    celda.innerText = '-';
+                }
+            });
+
+            let seleccionadas = document.querySelectorAll('.chk-materia:checked');
+            seleccionadas.forEach(chk => {
+                let dia = chk.dataset.dia;
+                let hora = chk.dataset.hora;
+                let nombreCorto = chk.dataset.nombre.substring(0, 5) + ".";
+                let celda = document.getElementById(`celda-${dia}-${hora}`);
+                
+                if (celda) {
+                    if (celda.innerText !== '-') {
+                        celda.classList.remove('celda-ocupada', 'celda-libre');
+                        celda.classList.add('celda-choque');
+                        celda.innerText = 'CHOQUE';
+                        choqueGlobal = true;
+                    } else {
+                        celda.classList.remove('celda-libre');
+                        celda.classList.add('celda-ocupada');
+                        celda.innerText = nombreCorto;
+                    }
+                }
+            });
+
+            if (choqueGlobal) {
+                mostrarAlerta('alerta-materias', "⚠️ ERROR: Tiene materias chocando en el mismo horario.");
+            }
+        }
+
+        function procesarInscripcionFinal() {
+            let uc = parseInt(document.getElementById('contador-uc').innerText);
+            if (uc === 0) { mostrarAlerta('alerta-materias', "Seleccione al menos una asignatura."); return; }
+            if (uc > LIMITE_UC) { mostrarAlerta('alerta-materias', "Corrija el exceso de UC."); return; }
+            if (choqueGlobal) { mostrarAlerta('alerta-materias', "Solucione los choques de horario."); return; }
+
+            document.getElementById('doc-nombre').innerText = usuarioActivo.nombre.toUpperCase();
+            document.getElementById('doc-cedula').innerText = usuarioActivo.cedula;
+            document.getElementById('doc-carrera').innerText = bd_carreras[usuarioActivo.carrera_id].nombre.toUpperCase();
+            document.getElementById('doc-uc').innerText = uc;
+            navegarA('vista-materias', 'vista-exito');
+        }
+
+        // 7. FUNCIONES FINALES (PDF Y SALIR)
+        function descargarPDF() {
+            let elemento = document.getElementById('comprobante-pdf');
+            let opciones = {
+                margin: 0.5,
+                filename: 'Comprobante_TECNOVA_' + usuarioActivo.cedula + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, backgroundColor: '#ffffff' },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opciones).from(elemento).save();
+        }
+
+        function cerrarSesion() {
+            usuarioActivo = null;
+            document.getElementById('log-cedula').value = "";
+            document.getElementById('log-clave').value = "";
+            navegarA('vista-materias', 'vista-login');
+            navegarA('vista-exito', 'vista-login');
+        }
+
+        // 8. ASIGNACIÓN DE EVENTOS A LOS BOTONES
+        document.getElementById('btn-ojo-login').addEventListener('click', function() { controladorOjito('log-clave', this); });
+        document.getElementById('btn-ojo-registro').addEventListener('click', function() { controladorOjito('reg-clave', this); });
+        
+        document.getElementById('btn-login-trigger').addEventListener('click', ejecutarLogin);
+        document.getElementById('btn-registro-trigger').addEventListener('click', ejecutarRegistro);
+        
+        document.getElementById('btn-confirmar-inscripcion').addEventListener('click', procesarInscripcionFinal);
+        document.getElementById('btn-descargar-pdf').addEventListener('click', descargarPDF);
+        
+        document.getElementById('btn-finalizar-sesion').addEventListener('click', cerrarSesion);
+        document.getElementById('btn-cancelar-salir').addEventListener('click', cerrarSesion);
+        
+        document.getElementById('lnk-ir-registro').addEventListener('click', function() { navegarA('vista-login', 'vista-registro'); });
+        document.getElementById('btn-volver-login').addEventListener('click', function() { navegarA('vista-registro', 'vista-login'); });
+
+    </script>
 </body>
 </html>
