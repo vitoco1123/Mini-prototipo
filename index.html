@@ -6,6 +6,7 @@
     <title>TECNOVA - Control Estudiantil</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         /* === ESTILOS BASE === */
@@ -60,6 +61,8 @@
 <div class="contenedor-app">
 
     <div id="vista-login" class="pantalla pantalla-activa">
+        <img src="logo-unefa.png" alt="Logo TECNOVA" style="width: 110px; height: auto; margin: 10px auto 5px auto; display: block;">
+        
         <h2>TECNOVA</h2>
         <div class="subtitulo">CONTROL ESTUDIANTIL</div>
         
@@ -164,19 +167,13 @@
 
 </div>
 
-<script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
-    // Credenciales exactas. NO CAMBIES NADA AQUÍ.
+<script>
     const SUPABASE_URL = "https://wbmfymffshbptasomwre.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndibWZ5bWZmc2hicHRhc29td3JlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU5Nzk5NzksImV4cCI6MjAzMTU1NTk3OX0.T0Y1X091YjhCblFkczEtM0EwT0Z1YmN1bVpPdnZfSmU2a2Jkb1RfOUFz";
 
-    // 🚀 LA MAGIA: Inyectamos el fetch global para evitar el error
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-        global: { fetch: window.fetch.bind(window) }
-    });
+    // Conexión usando el objeto global window.supabase (Infalible)
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    /* === BASE DE DATOS DE MATERIAS (4to Semestre) === */
     const bd_carreras = {
         "ing_sistemas": {
             nombre: "Ingeniería de Sistemas",
@@ -248,7 +245,6 @@
         let cedulaCompleta = nac + cedula;
 
         try {
-             // Verificamos primero si la cédula ya existe
              const { data: existe, error: errorBusqueda } = await supabase
                 .from('usuarios')
                 .select('cedula')
@@ -259,7 +255,6 @@
                  return;
              }
 
-             // Si no existe, lo guardamos
              const { error: errorInsert } = await supabase
                 .from('usuarios')
                 .insert([{ cedula: cedulaCompleta, nombre: nombre, clave: clave, carrera_id: carrera }]);
@@ -334,6 +329,20 @@
         });
     }
 
+    function calcularCreditosYHorario() {
+        let checkboxes = document.querySelectorAll('.chk-materia:checked');
+        let totalUc = 0;
+        checkboxes.forEach(chk => { totalUc += parseInt(chk.value); });
+        document.getElementById('contador-uc').innerText = totalUc;
+        
+        if(totalUc > LIMITE_UC) {
+            mostrarAlerta('alerta-materias', "⚠️ LÍMITE EXCEDIDO: Desmarque materias para no superar las " + LIMITE_UC + " UC.");
+        } else {
+            document.getElementById('alerta-materias').style.display = "none";
+        }
+        actualizarCuadroHorario();
+    }
+
     function actualizarCuadroHorario() {
         choqueGlobal = false;
         document.querySelectorAll('[id^="celda-"]').forEach(celda => {
@@ -392,7 +401,6 @@
         html2pdf().set(opciones).from(elemento).save();
     }
 
-    // Configuración de los botones (Event Listeners dentro del módulo)
     document.getElementById('btn-ojo-login').addEventListener('click', function() { controladorOjito('log-clave', this); });
     document.getElementById('btn-ojo-registro').addEventListener('click', function() { controladorOjito('reg-clave', this); });
     document.getElementById('btn-login-trigger').addEventListener('click', ejecutarLogin);
