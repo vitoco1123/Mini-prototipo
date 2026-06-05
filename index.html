@@ -6,6 +6,7 @@
     <title>TECNOVA - Control Estudiantil</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         /* === ESTILOS BASE === */
@@ -15,7 +16,6 @@
         .pantalla { display: none; width: 100%; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; }
         .pantalla-activa { display: flex; }
         
-        /* ROJO ELÉCTRICO PARA TÍTULOS */
         h2 { color: #FF1744; margin-top: 15px; margin-bottom: 5px; font-size: 20px; text-transform: uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
         .subtitulo { font-size: 11px; color: #FF1744; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; }
         
@@ -28,7 +28,6 @@
         .btn-ojito { background: none; border: none; padding: 10px; cursor: pointer; outline: none; display: flex; align-items: center; justify-content: center;}
         .select-carrera { width: 90%; padding: 12px; margin: 8px 0; border: none; border-radius: 6px; font-size: 14px; color: #333; }
 
-        /* ROJO ELÉCTRICO PARA BOTONES Y ENLACES */
         button.btn-principal { background-color: #FF1744; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 90%; transition: background 0.2s; box-sizing: border-box; box-shadow: 0 4px 6px rgba(255, 23, 68, 0.3);}
         button.btn-principal:hover { background-color: #D50000; }
         .btn-secundario { background-color: white; border: 1px solid #FF1744; color: #FF1744; margin-top: 10px; padding: 12px 20px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; width: 90%; box-sizing: border-box;}
@@ -158,7 +157,7 @@
                 <strong style="color:#FF1744;">CARRERA:</strong> <span id="doc-carrera"></span><br>
                 <strong style="color:#FF1744;">UC INSCRITAS:</strong> <span id="doc-uc"></span><br>
                 <hr style="border: 0.5px solid #ccc; margin: 8px 0;">
-                <strong>ESTADO:</strong> PROCESADO EN NUBE FIRESTORE
+                <strong>ESTADO:</strong> PROCESADO EN NUBE SUPABASE
             </div>
         </div>
         <button class="btn-principal" id="btn-descargar-pdf">DESCARGAR PLANILLA (PDF)</button>
@@ -169,9 +168,9 @@
 
 <script type="module">
     const SUPABASE_URL = "https://wbmfymffshbptasomwre.supabase.co";
-const SUPABASE_KEY = "AQUÍ_PEGAS_TU_CLAVE_LARGA_ANON_PUBLIC"; // 👈 La de la captura que empieza por eyJhbGciOi...
+    const SUPABASE_KEY = "AQUÍ_PEGAS_TU_CLAVE_LARGA_ANON_PUBLIC"; // 👈 PON TU CLAVE ANON LARGA AQUÍ
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     /* === BASE DE DATOS DE MATERIAS (4to Semestre) === */
     const bd_carreras = {
@@ -249,22 +248,22 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 .from('usuarios')
                 .insert([
                     { 
-                        cedula: cedula, 
+                        cedula: cedulaCompleta, 
                         nombre: nombre, 
                         clave: clave, 
-                        carrera_id: carrera_id 
+                        carrera_id: carrera 
                     }
                 ]);
 
              if (error) throw error;
 
             alert("¡Registro exitoso! El estudiante ha sido inscrito de una vez.");
+            navegarA('vista-registro', 'vista-login');
             
       } catch (error) {
             console.error("Error al registrar:", error.message);
             alert("Error en la base de datos: " + error.message);
         }
-
     }
 
     async function ejecutarLogin() {
@@ -276,15 +275,13 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let cedulaCompleta = nac + ced;
         
         try {
-            // Buscamos al estudiante por su cédula en Supabase
             const { data: usuarios, error } = await supabase
                 .from('usuarios')
                 .select('*')
-                .eq('cedula', cedula);
+                .eq('cedula', cedulaCompleta);
 
             if (error) throw error;
 
-            // Si no devuelve filas, significa que la cédula no está registrada
             if (!usuarios || usuarios.length === 0) {
                 alert("El usuario no se encuentra registrado.");
                 return;
@@ -292,21 +289,20 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
             const usuario = usuarios[0];
 
-            // Validamos si la clave ingresada coincide con la de la base de datos
             if (usuario.clave !== clave) {
                 alert("La contraseña ingresada es incorrecta.");
                 return;
             }
 
             alert("¡Bienvenido al SICE, " + usuario.nombre + "!");
-            // Aquí puedes meter tu redirección a la página interna, por ejemplo:
-            // window.location.href = "dashboard.html";
+            usuarioActivo = usuario;
+            cargarOfertaAcademica();
+            navegarA('vista-login', 'vista-materials' === 'vista-materials' ? 'vista-materias' : 'vista-materias');
 
         } catch (error) {
             console.error("Error en el login:", error.message);
             alert("Error al conectar con la base de datos: " + error.message);
         }
-
     }
 
     function cargarOfertaAcademica() {
