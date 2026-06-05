@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
-        /* === ESTILOS BASE === */
+        /* === ESTILOS BASE (TU DISEÑO) === */
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             background-color: #e9ecef;
@@ -20,7 +20,7 @@
         }
         .contenedor-app {
             width: 380px;
-            height: 650px;
+            min-height: 650px;
             background: #3A86FF;
             color: white;
             border-radius: 12px;
@@ -29,7 +29,26 @@
             box-sizing: border-box;
             position: relative;
             overflow-y: auto;
-            overflow-x: hidden;
+        }
+        .logo {
+            width: 100%;
+            max-width: 150px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin: 5px 0;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        h2 {
+            color: white;
+            text-align: center;
+            margin: 0 0 20px 0;
+            font-size: 16px;
+            font-weight: normal;
         }
         .pantalla {
             display: none;
@@ -50,19 +69,29 @@
             width: 100%;
             box-sizing: border-box;
         }
-        input, button, select {
+        input, select {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin: 8px 0;
             border: none;
             border-radius: 5px;
             box-sizing: border-box;
+            background: white;
+            color: #333;
+            font-size: 16px;
         }
         button {
-            background: #fff;
-            color: #3A86FF;
-            cursor: pointer;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
             font-weight: bold;
+            cursor: pointer;
+            background: #FF0000;
+            color: white;
         }
         button:hover { opacity: 0.9; }
         .materia-card {
@@ -104,41 +133,59 @@
             display: none;
             text-align: left;
         }
-        h1 { margin: 0; font-size: 24px; }
-        h2 { margin: 5px 0; font-size: 18px; }
-        h3 { margin: 0; font-size: 14px; }
-        a { color: white; text-decoration: underline; cursor: pointer; }
+        a {
+            color: white;
+            text-decoration: none;
+            margin-top: 10px;
+            display: block;
+        }
+        a:hover { text-decoration: underline; }
+        .enlace-registro {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .enlace-registro a {
+            display: inline;
+        }
+        .enlace-registro a:first-child {
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="contenedor-app">
         <!-- Pantalla de Login -->
         <div id="vista-login" class="pantalla pantalla-activa">
+            <img src="logo-unefa.png" alt="Logo UNEFA" class="logo">
             <h1>TECNOVA</h1>
-            <h2>INICIO DE SESIÓN</h2>
+            <h2>CONTROL ESTUDIANTIL</h2>
             <select id="log-nac">
-                <option value="V">V</option>
-                <option value="E">E</option>
+                <option value="V">V-</option>
+                <option value="E">E-</option>
             </select>
-            <input type="text" id="log-cedula" placeholder="Cédula">
+            <input type="text" id="log-cedula" placeholder="Cédula de Identidad">
             <div style="position: relative;">
                 <input type="password" id="log-clave" placeholder="Contraseña">
-                <button id="btn-ojo-login" style="position: absolute; right: 10px; top: 10px; background: none; border: none; cursor: pointer; padding: 0; width: auto;">👁️</button>
+                <button id="btn-ojo-login" style="position: absolute; right: 10px; top: 10px; background: none; border: none; cursor: pointer; padding: 0; width: auto; height: auto;">👁️</button>
             </div>
             <div id="alerta-login" class="cuadro-alerta"></div>
-            <button id="btn-login-trigger">Iniciar Sesión</button>
-            <a id="lnk-ir-registro">¿No tienes cuenta? Regístrate</a>
+            <button id="btn-login-trigger">INICIAR SESIÓN</button>
+            <div class="enlace-registro">
+                <a>¿No tienes cuenta?</a>
+                <a id="lnk-ir-registro">Regístrate aquí</a>
+            </div>
         </div>
 
         <!-- Pantalla de Registro -->
         <div id="vista-registro" class="pantalla">
+            <img src="logo-unefa.png" alt="Logo UNEFA" class="logo">
             <h1>TECNOVA</h1>
             <h2>REGISTRO</h2>
-            <h3>NUEVO PERFIL ACADÉMICO</h3>
+            <h3 style="margin: 0; font-size: 14px; font-weight: normal;">NUEVO PERFIL ACADÉMICO</h3>
             <input type="text" id="reg-nombre" placeholder="Nombre completo">
             <select id="reg-nac">
-                <option value="V">V</option>
-                <option value="E">E</option>
+                <option value="V">V-</option>
+                <option value="E">E-</option>
             </select>
             <input type="text" id="reg-cedula" placeholder="Cédula">
             <select id="reg-carrera">
@@ -148,15 +195,16 @@
             </select>
             <div style="position: relative;">
                 <input type="password" id="reg-clave" placeholder="Contraseña">
-                <button id="btn-ojo-registro" style="position: absolute; right: 10px; top: 10px; background: none; border: none; cursor: pointer; padding: 0; width: auto;">👁️</button>
+                <button id="btn-ojo-registro" style="position: absolute; right: 10px; top: 10px; background: none; border: none; cursor: pointer; padding: 0; width: auto; height: auto;">👁️</button>
             </div>
             <div id="alerta-registro" class="cuadro-alerta"></div>
-            <button id="btn-registro-trigger">Registrarme</button>
-            <button id="btn-volver-login">Volver al Login</button>
+            <button id="btn-registro-trigger">REGISTRARME</button>
+            <button id="btn-volver-login" style="background: #888;">VOLVER AL LOGIN</button>
         </div>
 
         <!-- Pantalla de Materias -->
         <div id="vista-materias" class="pantalla">
+            <img src="logo-unefa.png" alt="Logo UNEFA" class="logo">
             <h1>TECNOVA</h1>
             <h2 id="lbl-carrera-actual">Carrera</h2>
             <div id="cuadro-horario">
@@ -179,12 +227,13 @@
             <div id="alerta-materias" class="cuadro-alerta"></div>
             <div id="lista-materias-dinamica"></div>
             <p>UC seleccionadas: <strong><span id="contador-uc">0</span>/20</strong></p>
-            <button id="btn-confirmar-inscripcion">Confirmar Inscripción</button>
-            <button id="btn-finalizar-sesion">Cerrar Sesión</button>
+            <button id="btn-confirmar-inscripcion">CONFIRMAR INSCRIPCIÓN</button>
+            <button id="btn-finalizar-sesion">CERRAR SESIÓN</button>
         </div>
 
         <!-- Pantalla de Éxito -->
         <div id="vista-exito" class="pantalla">
+            <img src="logo-unefa.png" alt="Logo UNEFA" class="logo">
             <h1>TECNOVA</h1>
             <h2>¡INSCRIPCIÓN EXITOSA!</h2>
             <div id="comprobante-pdf">
@@ -193,8 +242,8 @@
                 <p><strong>Carrera:</strong> <span id="doc-carrera"></span></p>
                 <p><strong>UC Inscritas:</strong> <span id="doc-uc"></span></p>
             </div>
-            <button id="btn-descargar-pdf">Descargar Comprobante (PDF)</button>
-            <button id="btn-cancelar-salir">Finalizar</button>
+            <button id="btn-descargar-pdf">DESCARGAR COMPROBANTE (PDF)</button>
+            <button id="btn-cancelar-salir">FINALIZAR</button>
         </div>
     </div>
 
